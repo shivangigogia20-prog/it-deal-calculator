@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IT Deal Value Estimator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #070d1a;
+    --surface: #0e1729;
+    --surface2: #131f35;
+    --border: rgba(99,179,237,0.12);
+    --border2: rgba(255,255,255,0.07);
+    --accent1: #4f8ef7;
+    --accent2: #0ecfcf;
+    --accent3: #a78bfa;
+    --text: #dde6f5;
+    --muted: #607090;
+    --muted2: #8a9fc0;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --radius: 12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BG mesh */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 20%, rgba(79,142,247,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 85% 70%, rgba(14,207,207,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 50% 100%, rgba(167,139,250,0.05) 0%, transparent 60%);
+  }
+
+  /* HEADER */
+  header {
+    position: relative; z-index: 10;
+    background: linear-gradient(180deg, #0b1428 0%, rgba(11,20,40,0.95) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 48px 0;
+    backdrop-filter: blur(12px);
+  }
+  .header-top { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .logo-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; box-shadow: 0 0 28px rgba(79,142,247,0.35);
+    flex-shrink: 0;
+  }
+  .header-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #f0f6ff; }
+  .header-sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 2px; }
+  .tab {
+    padding: 10px 24px; border: none; background: transparent;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--muted2); cursor: pointer; border-radius: 8px 8px 0 0;
+    transition: all 0.2s; border-bottom: 2px solid transparent;
+    position: relative;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent1);
+    border-bottom-color: var(--accent1);
+    background: rgba(79,142,247,0.07);
+  }
+
+  /* MAIN */
+  main { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+
+  /* PANELS */
+  .panel { display: none; animation: fadeIn 0.25s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* SECTION TITLE */
+  .sec-title {
+    border-bottom: 1px solid var(--border2);
+    padding-bottom: 16px; margin-bottom: 24px;
+  }
+  .sec-title h2 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; color: #eef4ff; }
+  .sec-title p { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+
+  /* GRID */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width:640px) { .grid2 { grid-template-columns: 1fr; } header { padding: 20px 20px 0; } }
+
+  /* FIELD */
+  .field label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--muted2); text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 7px;
+  }
+  .field select, .field input {
+    width: 100%; padding: 10px 14px; border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: var(--surface); color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none; -webkit-appearance: none;
+  }
+  .field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23607090' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  .field select:focus, .field input:focus { border-color: var(--accent1); box-shadow: 0 0 0 3px rgba(79,142,247,0.15); }
+  .field select option { background: #1a2540; }
+  .field.accent select { border-color: rgba(79,142,247,0.4); background: rgba(79,142,247,0.07); }
+  .prefix-wrap { position: relative; }
+  .prefix-wrap .prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+  .prefix-wrap input { padding-left: 24px; }
+
+  /* RESULT BAR */
+  #result-bar {
+    margin-top: 28px;
+    background: linear-gradient(135deg, rgba(79,142,247,0.1), rgba(14,207,207,0.07));
+    border: 1px solid rgba(79,142,247,0.25);
+    border-radius: 16px; padding: 24px 32px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;
+  }
+  .main-val-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .main-val {
+    font-family: 'Syne', sans-serif; font-size: 40px; font-weight: 800; letter-spacing: -1.5px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .main-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .range-pills { display: flex; gap: 24px; }
+  .pill { text-align: center; }
+  .pill-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; }
+  .pill-val { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; }
+
+  /* RESULT CARDS */
+  .result-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+  @media(max-width:600px) { .result-cards { grid-template-columns: 1fr; } }
+  .rcard {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 18px 20px;
+    transition: border-color 0.2s;
+  }
+  .rcard:hover { border-color: rgba(79,142,247,0.3); }
+  .rcard-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .rcard-val { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; color: #eef4ff; }
+  .rcard-desc { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+  /* RANGE BAR */
+  .range-section {
+    margin-top: 20px; background: var(--surface);
+    border: 1px solid var(--border2); border-radius: var(--radius); padding: 20px 24px;
+  }
+  .range-section-title { font-size: 11px; font-weight: 600; color: var(--muted2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px; }
+  .range-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .range-item { text-align: center; }
+  .range-item-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .range-item-val { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 600; }
+  .range-item-pct { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ASSUMPTIONS */
+  .assumptions {
+    margin-top: 16px; background: var(--surface);
+    border: 1px solid var(--border2); border-radius: var(--radius); padding: 18px 24px;
+  }
+  .assumptions-title { font-size: 11px; font-weight: 600; color: var(--muted2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+  .assumptions-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+  @media(max-width:600px) { .assumptions-grid { grid-template-columns: 1fr 1fr; } .range-grid { grid-template-columns: 1fr; } }
+  .assumption-item { font-size: 12px; }
+  .assumption-key { color: var(--muted); }
+  .assumption-val { color: var(--text); font-weight: 600; }
+
+  /* BADGE */
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 99px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    background: rgba(79,142,247,0.15); color: var(--accent1); border: 1px solid rgba(79,142,247,0.3);
+    margin-left: 8px; vertical-align: middle;
+  }
+
+  /* ENHANCEMENT TABLE */
+  .enh-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .enh-table th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; text-align: left; padding: 8px 0; border-bottom: 1px solid var(--border2); }
+  .enh-table td { padding: 9px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .enh-table tr:last-child td { border-bottom: none; }
+  .factor-val { font-family: 'DM Mono', monospace; color: var(--accent2); }
+  .factor-neutral { color: var(--muted); }
+
+  /* COMBINED FACTOR */
+  .combined-factor {
+    margin-top: 16px; padding: 14px 20px;
+    background: rgba(14,207,207,0.07); border: 1px solid rgba(14,207,207,0.2);
+    border-radius: 10px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .combined-factor-label { font-size: 13px; color: var(--muted2); }
+  .combined-factor-val { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 600; color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo-icon">💼</div>
+    <div>
+      <div class="header-title">IT Deal Value Estimator</div>
+      <div class="header-sub">Powered by 35,500+ historical deals &nbsp;·&nbsp; 2026 Industry Benchmarks &nbsp;·&nbsp; 12 parameters</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(0)">📋 &nbsp;Core Inputs</button>
+    <button class="tab" onclick="switchTab(1)">⚡ &nbsp;Enhancements</button>
+    <button class="tab" onclick="switchTab(2)">📊 &nbsp;Results</button>
+  </div>
+</header>
+
+<main>
+  <!-- PANEL 0: CORE INPUTS -->
+  <div class="panel active" id="panel-0">
+    <div class="sec-title">
+      <h2>📋 Core Deal Parameters</h2>
+      <p>Required fields — all fields update estimates instantly</p>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Deal Category</label>
+        <select id="category" onchange="calc()">
+          <option>Application Management</option>
+          <option>Business Consulting</option>
+          <option>Business Skills Training</option>
+          <option>Carrier Network Infrastructure Outsourcing</option>
+          <option>Custom Application Development</option>
+          <option>Discrete Testing Services</option>
+          <option>Hardware Deploy and Support</option>
+          <option>Hosted Application Management</option>
+          <option>Hosting Infrastructure Services</option>
+          <option selected>IT Consulting</option>
+          <option>IT Education and Training</option>
+          <option>IT Outsourcing</option>
+          <option>Key Horizontal BPO</option>
+          <option>Network and Endpoint Outsourcing Services</option>
+          <option>Network Consulting and Integration</option>
+          <option>Outsourced Document Services</option>
+          <option>SaaS - Applications</option>
+          <option>Software Deploy and Support</option>
+          <option>Systems Integration</option>
+          <option>Technology Outsourcing</option>
+          <option>Vertical Business Process Outsourcing</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Customer Industry</label>
+        <select id="industry" onchange="calc()">
+          <option selected>Banking & Finance</option>
+          <option>Business Services</option>
+          <option>Construction</option>
+          <option>Consumer Services</option>
+          <option>Education</option>
+          <option>Healthcare</option>
+          <option>IT Services</option>
+          <option>Insurance</option>
+          <option>Investment Banking & Services</option>
+          <option>Manufacturing-Consumer Products</option>
+          <option>Manufacturing-Industrial Products</option>
+          <option>Media & Internet</option>
+          <option>Public Sector and Government</option>
+          <option>Retail</option>
+          <option>Telecommunications</option>
+          <option>Transportation & Logistics</option>
+          <option>Utilities</option>
+          <option>Wholesale</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Geographic Region (Vendor / Customer)</label>
+        <select id="region" onchange="calc()">
+          <option>North America (US/Canada)</option>
+          <option>Western Europe (UK/GER/FR)</option>
+          <option>Latin America (MEX/BRA/ARG)</option>
+          <option>Eastern Europe (POL/ROM/UKR)</option>
+          <option>Asia-Pacific (IND/VNM/PHL)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Company Size Tier</label>
+        <select id="sizeTier" onchange="calc()">
+          <option>Small to Medium Businesses (SMBs)</option>
+          <option>Mid-Market Enterprises</option>
+          <option selected>Large Enterprises</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Client Annual Revenue (USD)</label>
+        <div class="prefix-wrap">
+          <span class="prefix">$</span>
+          <input type="number" id="revenue" value="3700000000" min="0" oninput="calc()"/>
+        </div>
+      </div>
+      <div class="field">
+        <label>Number of Employees</label>
+        <input type="number" id="employees" value="3200" min="1" oninput="calc()"/>
+      </div>
+      <div class="field">
+        <label>Deal Duration (Years)</label>
+        <input type="number" id="duration" value="5" min="1" max="20" oninput="calc()"/>
+      </div>
+      <div class="field accent">
+        <label>AI-Driven Deal? <span class="badge">+10% uplift</span></label>
+        <select id="aiDeal" onchange="calc()">
+          <option selected>Yes</option>
+          <option>No</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 1: ENHANCEMENTS -->
+  <div class="panel" id="panel-1">
+    <div class="sec-title">
+      <h2>⚡ Enhancement Parameters</h2>
+      <p>All optional — select "Not Known" to default to 1.0× (neutral). Factors multiply together.</p>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>Pricing Model</label>
+        <select id="pricingModel" onchange="calc()">
+          <option>Fixed Price</option>
+          <option>Time & Materials</option>
+          <option>Dedicated Team</option>
+          <option>Outcome-Based</option>
+          <option>Hybrid</option>
+          <option selected>Not Known</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Delivery Model / Shore Mix</label>
+        <select id="shoreMix" onchange="calc()">
+          <option>100% Onshore</option>
+          <option>70/30 On/Off</option>
+          <option>50/50 Hybrid</option>
+          <option>30/70 Off/On</option>
+          <option>100% Offshore</option>
+          <option selected>Not Known</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Deal Scope Complexity</label>
+        <select id="scope" onchange="calc()">
+          <option>Simple (1 tower)</option>
+          <option>Moderate (2-3 towers)</option>
+          <option>Complex (multi-tower)</option>
+          <option>Mega-deal (enterprise-wide)</option>
+          <option selected>Not Known</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Contract Type</label>
+        <select id="contractType" onchange="calc()">
+          <option>New Deal</option>
+          <option>Renewal (Same Scope)</option>
+          <option>Renewal + Expansion</option>
+          <option>Competitive Re-bid</option>
+          <option selected>Not Known</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>SLA Tier / Service Level</label>
+        <select id="slaTier" onchange="calc()">
+          <option>Basic (99.5%/4hr)</option>
+          <option>Standard (99.9%/1hr)</option>
+          <option>Premium (99.99%/15min)</option>
+          <option>Mission-Critical (99.999%)</option>
+          <option selected>Not Known</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Vendor Tier / Brand Premium</label>
+        <select id="vendorTier" onchange="calc()">
+          <option>Tier 1 (Global Top 10)</option>
+          <option>Tier 2 (Top 11-50)</option>
+          <option>Tier 3 (Niche/Boutique)</option>
+          <option>Offshore Pure-play</option>
+          <option selected>Not Known</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Regulatory / Compliance</label>
+        <select id="compliance" onchange="calc()">
+          <option>None</option>
+          <option>Single (GDPR/HIPAA/SOX)</option>
+          <option>Multiple Standards</option>
+          <option>FedRAMP / IL4+</option>
+          <option selected>Not Known</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Transition / Implementation Cost</label>
+        <select id="transition" onchange="calc()">
+          <option>Simple (5%)</option>
+          <option>Standard (10%)</option>
+          <option>Complex (15%)</option>
+          <option selected>Not Known</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Multi-Year Discount</label>
+        <select id="multiYear" onchange="calc()">
+          <option>1 Year (0%)</option>
+          <option>2-3 Years (-5%)</option>
+          <option>4-5 Years (-10%)</option>
+          <option>6-7 Years (-15%)</option>
+          <option selected>Not Known</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Cloud vs On-Prem Mix</label>
+        <select id="cloudMix" onchange="calc()">
+          <option>Fully On-Prem</option>
+          <option>Hybrid (50/50)</option>
+          <option>Cloud-First (80%+)</option>
+          <option>Cloud-Native (100%)</option>
+          <option selected>Not Known</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Live factor table -->
+    <div class="range-section" style="margin-top:28px;">
+      <div class="range-section-title">Live Enhancement Factors</div>
+      <table class="enh-table">
+        <tr><th>Parameter</th><th>Selection</th><th>Factor</th><th>Range</th></tr>
+        <tbody id="factor-table-body"></tbody>
+      </table>
+      <div class="combined-factor">
+        <span class="combined-factor-label">Combined Enhancement Factor (all 10 multiplied)</span>
+        <span class="combined-factor-val" id="combined-factor-display">1.000×</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 2: RESULTS -->
+  <div class="panel" id="panel-2">
+    <div class="sec-title">
+      <h2>📊 Detailed Estimates</h2>
+      <p>Four valuation methodologies blended from 35,500+ deals</p>
+    </div>
+    <div class="result-cards">
+      <div class="rcard">
+        <div class="rcard-label">Benchmark Annual Estimate</div>
+        <div class="rcard-val" id="r-bench-annual">–</div>
+        <div class="rcard-desc">Revenue × IT% × Category Share × Region Multiplier × AI × All Factors</div>
+      </div>
+      <div class="rcard">
+        <div class="rcard-label">Benchmark Full-Term Estimate</div>
+        <div class="rcard-val" id="r-bench-full">–</div>
+        <div class="rcard-desc">Annual Estimate × Duration</div>
+      </div>
+      <div class="rcard">
+        <div class="rcard-label">Historical Geo-Adjusted</div>
+        <div class="rcard-val" id="r-hist">–</div>
+        <div class="rcard-desc">((Cat Avg + Ind Avg) / 2) × Region Adj × AI × Factors × Duration</div>
+      </div>
+      <div class="rcard">
+        <div class="rcard-label">Per-Employee Estimate</div>
+        <div class="rcard-val" id="r-emp">–</div>
+        <div class="rcard-desc">Employees × Regional $/Emp × Category Share × AI × Factors × Duration</div>
+      </div>
+    </div>
+
+    <div class="range-section">
+      <div class="range-section-title">Deal Range Analysis</div>
+      <div class="range-grid">
+        <div class="range-item">
+          <div class="range-item-label">Conservative</div>
+          <div class="range-item-val" id="r-low" style="color:var(--green)">–</div>
+          <div class="range-item-pct">70% of benchmark</div>
+        </div>
+        <div class="range-item">
+          <div class="range-item-label">Expected / Moderate</div>
+          <div class="range-item-val" id="r-mid" style="color:var(--accent1)">–</div>
+          <div class="range-item-pct">100% of benchmark</div>
+        </div>
+        <div class="range-item">
+          <div class="range-item-label">Aggressive</div>
+          <div class="range-item-val" id="r-high" style="color:var(--amber)">–</div>
+          <div class="range-item-pct">140% of benchmark</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="assumptions">
+      <div class="assumptions-title">Key Assumptions Used</div>
+      <div class="assumptions-grid" id="assumptions-grid"></div>
+    </div>
+  </div>
+
+  <!-- RESULT BAR (always visible) -->
+  <div id="result-bar">
+    <div>
+      <div class="main-val-label">Recommended Estimate (Blended 40/40/20)</div>
+      <div class="main-val" id="main-val">–</div>
+      <div class="main-sub" id="main-sub">ACV: – · 5yr total</div>
+    </div>
+    <div class="range-pills">
+      <div class="pill">
+        <div class="pill-label">Conservative</div>
+        <div class="pill-val" id="pill-low" style="color:var(--green)">–</div>
+      </div>
+      <div class="pill">
+        <div class="pill-label">Expected</div>
+        <div class="pill-val" id="pill-mid" style="color:var(--accent1)">–</div>
+      </div>
+      <div class="pill">
+        <div class="pill-label">Aggressive</div>
+        <div class="pill-val" id="pill-high" style="color:var(--amber)">–</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const CAT_AVG = {
+  "Application Management":39816760,"Business Consulting":30590751,
+  "Business Skills Training":6527188,"Carrier Network Infrastructure Outsourcing":202710912,
+  "Custom Application Development":12218135,"Discrete Testing Services":45629891,
+  "Hardware Deploy and Support":13805385,"Hosted Application Management":20502802,
+  "Hosting Infrastructure Services":34774370,"IT Consulting":11443681,
+  "IT Education and Training":13240934,"IT Outsourcing":139856366,
+  "Key Horizontal BPO":141744579,"Network and Endpoint Outsourcing Services":98460406,
+  "Network Consulting and Integration":32955291,"Outsourced Document Services":49870217,
+  "SaaS - Applications":7553112,"Software Deploy and Support":11179717,
+  "Systems Integration":25927082,"Technology Outsourcing":73668284,
+  "Vertical Business Process Outsourcing":216749980
+};
+const IND_AVG = {
+  "Banking & Finance":31985506,"Business Services":18548557,"Construction":18170929,
+  "Consumer Services":10186417,"Education":5272350,"Healthcare":47127614,
+  "IT Services":19048077,"Insurance":43567281,"Investment Banking & Services":17681289,
+  "Manufacturing-Consumer Products":43518047,"Manufacturing-Industrial Products":31359437,
+  "Media & Internet":26402106,"Public Sector and Government":93315130,
+  "Retail":19878646,"Telecommunications":39278672,"Transportation & Logistics":25344465,
+  "Utilities":23315862,"Wholesale":8736412
+};
+const CAT_SHARE = {
+  "Application Management":0.325,"Business Consulting":0.325,"Business Skills Training":0.325,
+  "Carrier Network Infrastructure Outsourcing":0.21,"Custom Application Development":0.255,
+  "Discrete Testing Services":0.325,"Hardware Deploy and Support":0.16,
+  "Hosted Application Management":0.255,"Hosting Infrastructure Services":0.325,
+  "IT Consulting":0.325,"IT Education and Training":0.325,"IT Outsourcing":0.325,
+  "Key Horizontal BPO":0.325,"Network and Endpoint Outsourcing Services":0.21,
+  "Network Consulting and Integration":0.21,"Outsourced Document Services":0.325,
+  "SaaS - Applications":0.255,"Software Deploy and Support":0.255,
+  "Systems Integration":0.325,"Technology Outsourcing":0.325,
+  "Vertical Business Process Outsourcing":0.325
+};
+const IND_IT_SPEND = {
+  "Banking & Finance":0.11,"Business Services":0.057,"Construction":0.025,
+  "Consumer Services":0.0275,"Education":0.045,"Healthcare":0.065,
+  "IT Services":0.09,"Insurance":0.08,"Investment Banking & Services":0.1125,
+  "Manufacturing-Consumer Products":0.031,"Manufacturing-Industrial Products":0.04,
+  "Media & Internet":0.07,"Public Sector and Government":0.04,
+  "Retail":0.035,"Telecommunications":0.07,"Transportation & Logistics":0.035,
+  "Utilities":0.04,"Wholesale":0.03
+};
+const REGION_DATA = {
+  "North America (US/Canada)": {mult:4.75, spendPerEmp:13500},
+  "Western Europe (UK/GER/FR)": {mult:4.0, spendPerEmp:10000},
+  "Latin America (MEX/BRA/ARG)": {mult:2.5, spendPerEmp:5000},
+  "Eastern Europe (POL/ROM/UKR)": {mult:2.15, spendPerEmp:5000},
+  "Asia-Pacific (IND/VNM/PHL)": {mult:1.0, spendPerEmp:2250},
+};
+const SIZE_IT = {
+  "Small to Medium Businesses (SMBs)":0.055,
+  "Mid-Market Enterprises":0.04,
+  "Large Enterprises":0.03
+};
+const FACTORS = {
+  pricingModel:   {"Fixed Price":0.85,"Time & Materials":1.0,"Dedicated Team":1.1,"Outcome-Based":1.25,"Hybrid":1.05,"Not Known":1.0},
+  shoreMix:       {"100% Onshore":3.0,"70/30 On/Off":2.2,"50/50 Hybrid":1.6,"30/70 Off/On":1.2,"100% Offshore":1.0,"Not Known":1.0},
+  scope:          {"Simple (1 tower)":0.7,"Moderate (2-3 towers)":1.0,"Complex (multi-tower)":1.4,"Mega-deal (enterprise-wide)":1.8,"Not Known":1.0},
+  contractType:   {"New Deal":1.0,"Renewal (Same Scope)":0.85,"Renewal + Expansion":1.15,"Competitive Re-bid":0.95,"Not Known":1.0},
+  slaTier:        {"Basic (99.5%/4hr)":0.85,"Standard (99.9%/1hr)":1.0,"Premium (99.99%/15min)":1.2,"Mission-Critical (99.999%)":1.4,"Not Known":1.0},
+  vendorTier:     {"Tier 1 (Global Top 10)":1.3,"Tier 2 (Top 11-50)":1.0,"Tier 3 (Niche/Boutique)":0.8,"Offshore Pure-play":0.7,"Not Known":1.0},
+  compliance:     {"None":1.0,"Single (GDPR/HIPAA/SOX)":1.1,"Multiple Standards":1.2,"FedRAMP / IL4+":1.25,"Not Known":1.0},
+  transition:     {"Simple (5%)":1.05,"Standard (10%)":1.1,"Complex (15%)":1.15,"Not Known":1.0},
+  multiYear:      {"1 Year (0%)":1.0,"2-3 Years (-5%)":0.95,"4-5 Years (-10%)":0.9,"6-7 Years (-15%)":0.85,"Not Known":1.0},
+  cloudMix:       {"Fully On-Prem":0.9,"Hybrid (50/50)":1.0,"Cloud-First (80%+)":1.1,"Cloud-Native (100%)":1.2,"Not Known":1.0},
+};
+const FACTOR_RANGES = {
+  pricingModel:"0.85×–1.25×", shoreMix:"1.0×–3.0×", scope:"0.7×–1.8×",
+  contractType:"0.85×–1.15×", slaTier:"0.85×–1.4×", vendorTier:"0.7×–1.3×",
+  compliance:"1.0×–1.25×", transition:"1.0×–1.15×", multiYear:"0.85×–1.0×", cloudMix:"0.9×–1.2×"
+};
+const FACTOR_LABELS = {
+  pricingModel:"Pricing Model", shoreMix:"Shore Mix", scope:"Scope Complexity",
+  contractType:"Contract Type", slaTier:"SLA Tier", vendorTier:"Vendor Tier",
+  compliance:"Compliance", transition:"Transition Cost", multiYear:"Multi-Year Discount", cloudMix:"Cloud Mix"
+};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function fmt(n) {
+  if (!n || isNaN(n)) return '–';
+  const m = n / 1e6;
+  return '$' + (m >= 100 ? m.toFixed(1) : m.toFixed(2)) + 'M';
+}
+function v(id) { return document.getElementById(id).value; }
+function set(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
+
+// ── CALCULATE ─────────────────────────────────────────────────────────────────
+function calc() {
+  const cat      = v('category');
+  const industry = v('industry');
+  const region   = v('region');
+  const sizeTier = v('sizeTier');
+  const revenue  = parseFloat(document.getElementById('revenue').value) || 0;
+  const employees= parseFloat(document.getElementById('employees').value) || 0;
+  const duration = parseFloat(document.getElementById('duration').value) || 1;
+  const aiDeal   = v('aiDeal') === 'Yes';
+
+  const rd       = REGION_DATA[region] || REGION_DATA["North America (US/Canada)"];
+  const regMult  = rd.mult;
+  const spendEmp = rd.spendPerEmp;
+  const itSpend  = IND_IT_SPEND[industry] || SIZE_IT[sizeTier] || 0.04;
+  const catShare = CAT_SHARE[cat] || 0.325;
+  const ai       = aiDeal ? 1.1 : 1.0;
+
+  // Compute all 10 enhancement factors
+  let allF = 1.0;
+  const factorKeys = ['pricingModel','shoreMix','scope','contractType','slaTier','vendorTier','compliance','transition','multiYear','cloudMix'];
+  const factorVals = {};
+  factorKeys.forEach(k => {
+    const sel = v(k);
+    const f   = FACTORS[k][sel] ?? 1.0;
+    factorVals[k] = { sel, f };
+    allF *= f;
+  });
+
+  const totalITBudget = revenue * itSpend;
+  const benchAnnual   = totalITBudget * catShare * regMult * ai * allF;
+  const benchFull     = benchAnnual * duration;
+  const catAvg        = CAT_AVG[cat] || 0;
+  const indAvg        = IND_AVG[industry] || 0;
+  const histGeoAdj    = ((catAvg + indAvg) / 2) * (regMult / 2.88) * ai * allF * duration;
+  const perEmp        = employees * spendEmp * catShare * ai * allF * duration;
+  const recommended   = benchFull * 0.4 + histGeoAdj * 0.4 + perEmp * 0.2;
+  const acv           = recommended / duration;
+  const low = benchFull * 0.7, mid = benchFull, high = benchFull * 1.4;
+
+  // Update result bar
+  set('main-val', fmt(recommended));
+  set('main-sub', `ACV: ${fmt(acv)} · ${duration}yr total`);
+  set('pill-low',  fmt(low));
+  set('pill-mid',  fmt(mid));
+  set('pill-high', fmt(high));
+
+  // Update results panel
+  set('r-bench-annual', fmt(benchAnnual));
+  set('r-bench-full',   fmt(benchFull));
+  set('r-hist',         fmt(histGeoAdj));
+  set('r-emp',          fmt(perEmp));
+  set('r-low',  fmt(low));
+  set('r-mid',  fmt(mid));
+  set('r-high', fmt(high));
+
+  // Assumptions grid
+  const ag = document.getElementById('assumptions-grid');
+  const assum = [
+    ['Total IT Budget', fmt(totalITBudget)],
+    ['Industry IT Spend %', (itSpend*100).toFixed(1)+'%'],
+    ['Category Budget Share', (catShare*100).toFixed(1)+'%'],
+    ['Region Multiplier', regMult+'×'],
+    ['AI Factor', ai+'×'],
+    ['Combined Enh. Factor', allF.toFixed(3)+'×'],
+    ['Category', cat],
+    ['Region', region],
+    ['Duration', duration+' yr'],
+  ];
+  ag.innerHTML = assum.map(([k,val]) =>
+    `<div class="assumption-item"><span class="assumption-key">${k}: </span><span class="assumption-val">${val}</span></div>`
+  ).join('');
+
+  // Enhancement factor table
+  const tb = document.getElementById('factor-table-body');
+  tb.innerHTML = factorKeys.map(k => {
+    const {sel, f} = factorVals[k];
+    const neutral  = f === 1.0;
+    const color    = f > 1 ? 'var(--green)' : f < 1 ? 'var(--red)' : 'var(--muted)';
+    return `<tr>
+      <td>${FACTOR_LABELS[k]}</td>
+      <td style="color:var(--text)">${sel}</td>
+      <td class="factor-val" style="color:${color}">${f.toFixed(2)}×</td>
+      <td style="color:var(--muted);font-size:12px">${FACTOR_RANGES[k]}</td>
+    </tr>`;
+  }).join('');
+  set('combined-factor-display', allF.toFixed(3)+'×');
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(idx) {
+  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+}
+
+// Init
+calc();
+</script>
+</body>
+</html>
